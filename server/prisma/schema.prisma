@@ -3,27 +3,27 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlserver"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String   @db.NVarChar(100)
-  email        String   @unique @db.NVarChar(255)
-  passwordHash String   @db.NVarChar(255)
-  role         String   @default("CITIZEN") @db.NVarChar(20)
+  id           Int              @id @default(autoincrement())
+  name         String
+  email        String           @unique
+  passwordHash String
+  role         String           @default("CITIZEN")
   requests     ServiceRequest[]
-  createdAt    DateTime @default(now())
+  createdAt    DateTime         @default(now())
 }
 
 model ServiceRequest {
   id          Int      @id @default(autoincrement())
-  category    String   @db.NVarChar(100)
-  location    String   @db.NVarChar(255)
-  description String   @db.NVarChar(Max)
-  imageUrl    String?  @db.NVarChar(500)
-  status      String   @default("PENDING") @db.NVarChar(20)
+  category    String
+  location    String
+  description String
+  imageUrl    String?
+  status      String   @default("PENDING")
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
   createdAt   DateTime @default(now())
