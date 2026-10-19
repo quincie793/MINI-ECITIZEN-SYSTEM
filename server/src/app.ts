@@ -12,11 +12,17 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: [
+      'http://localhost:5173', 
+      'https://mini-ecitizen-system-yec2.vercel.app' 
+    ],
+    credentials: true,
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Added for form data parsing
 
+// Serve uploaded images statically (legacy, but good to keep if any old images exist)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
