@@ -20,15 +20,20 @@ app.use(
   })
 );
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Added for form data parsing
+app.use(express.urlencoded({ extended: true })); 
 
-// Serve uploaded images statically (legacy, but good to keep if any old images exist)
+// Serve uploaded images statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Welcome Route (for the base URL)
+app.get('/', (_req, res) => {
+  res.json({ message: 'Welcome to the Mini eCitizen API. Please use /api/health or the Vercel frontend.' });
+});
 
 // Health Check
 app.get('/api/health', (_req, res) => {
@@ -38,7 +43,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// Global Error Handler (Good practice to catch unhandled errors)
+// Global Error Handler
 app.use(
   (
     err: any,
