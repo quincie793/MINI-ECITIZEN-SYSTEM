@@ -178,12 +178,12 @@ const AdminDashboard = () => {
                       <td className="p-4">
                         {req.imageUrl ? (
                           <a
-                            href={`http://localhost:5000${req.imageUrl}`}
+                            href={req.imageUrl}
                             target="_blank"
                             rel="noreferrer"
                           >
                             <img
-                              src={`http://localhost:5000${req.imageUrl}`}
+                              src={req.imageUrl}
                               alt="Evidence"
                               className="h-12 w-16 cursor-pointer rounded border object-cover shadow-sm transition-transform hover:scale-150"
                             />

@@ -80,12 +80,12 @@ const CitizenDashboard = () => {
                 {req.imageUrl && (
                   <div className="h-24 w-full flex-shrink-0 overflow-hidden rounded bg-gray-100 md:w-32">
                     <img
-                      src={`http://localhost:5000${req.imageUrl}`}
+                      src={req.imageUrl}
                       alt="Request"
                       className="h-full w-full cursor-pointer object-cover transition-transform hover:scale-110"
                       onClick={() =>
                         window.open(
-                          `http://localhost:5000${req.imageUrl}`,
+                          req.imageUrl!,
                           '_blank'
                         )
                       }
