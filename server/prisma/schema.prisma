@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.NVarChar(100)
+  email        String   @unique @db.NVarChar(255)
+  passwordHash String   @db.NVarChar(255)
+  role         String   @default("CITIZEN") @db.NVarChar(20)
+  requests     ServiceRequest[]
+  createdAt    DateTime @default(now())
+}
+
+model ServiceRequest {
+  id          Int      @id @default(autoincrement())
+  category    String   @db.NVarChar(100)
+  location    String   @db.NVarChar(255)
+  description String   @db.NVarChar(Max)
+  imageUrl    String?  @db.NVarChar(500)
+  status      String   @default("PENDING") @db.NVarChar(20)
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
