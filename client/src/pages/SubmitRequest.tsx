@@ -27,11 +27,8 @@ const SubmitRequest = () => {
       }
 
       // Send to backend
-      await api.post('/requests', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      // FIX: Removed the manual headers. Axios handles FormData headers automatically!
+      await api.post('/requests', formData);
 
       // On success, go back to dashboard
       navigate('/dashboard');

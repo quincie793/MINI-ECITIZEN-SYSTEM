@@ -7,70 +7,46 @@ import { protect, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// --- CLOUDINARY CONFIGURATION ---
+// 1. Configure Cloudinary
 cloudinary.config({
-  // Add 'as string' to satisfy TypeScript's strict mode
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
-  api_key: process.env.CLOUDINARY_API_KEY as string,
-  api_secret: process.env.CLOUDINARY_API_SECRET as string,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-// --- MULTER CONFIGURATION (For Cloudinary Upload) ---
+// 2. Set up Cloudinary Storage
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'mini_ecitizen', 
+    folder: 'mini_ecitizen',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-  } as any, // The 'as any' here prevents type errors with multer-storage-cloudinary
+  } as any,
 });
 
-const upload = multer({ 
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-});
+const upload = multer({ storage });
 
-// --- ROUTES ---
-
-// 1. Submit a new request (Citizen)
-router.post(
-  '/',
-  protect,
-  upload.single('image'),
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { category, location, description } = req.body;
-
-      // Cloudinary returns the full secure URL in req.file.path
-      const imageUrl = req.file ? req.file.path : null;
-
-      const newRequest = await prisma.serviceRequest.create({
-        data: {
-          category,
-          location,
-          description,
-          imageUrl,
-          userId: req.user!.id,
-        },
-      });
-
-      res.status(201).json({ success: true, request: newRequest });
-    } catch (error) {
-      console.log('SUBMIT REQUEST ERROR:', error);
-      res.status(500).json({ message: 'Failed to submit request' });
-    }
-  }
-);
-
-// 2. Get logged-in citizen's requests
-router.get('/my-requests', protect, async (req: AuthRequest, res: Response) => {
+// 3. POST route with better error logging
+router.post('/', protect, upload.single('image'), async (req: AuthRequest, res: Response) => {
   try {
-    const requests = await prisma.serviceRequest.findMany({
-      where: { userId: req.user!.id },
-      orderBy: { createdAt: 'desc' },
+    const { category, location, description } = req.body;
+    
+    // req.file.path contains the full Cloudinary URL
+    const imageUrl = req.file ? req.file.path : null;
+
+    const newRequest = await prisma.serviceRequest.create({
+      data: {
+        category,
+        location,
+        description,
+        imageUrl,
+        userId: req.user!.id,
+      },
     });
-    res.json(requests);
+
+    res.status(201).json({ success: true, request: newRequest });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch requests' });
+    console.error("SUBMIT REQUEST ERROR:", error); // <-- This will show in Render logs
+    res.status(500).json({ message: 'Failed to submit request' });
   }
 });
 
