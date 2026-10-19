@@ -83,12 +83,7 @@ const CitizenDashboard = () => {
                       src={req.imageUrl}
                       alt="Request"
                       className="h-full w-full cursor-pointer object-cover transition-transform hover:scale-110"
-                      onClick={() =>
-                        window.open(
-                          req.imageUrl!,
-                          '_blank'
-                        )
-                      }
+                      onClick={() => window.open(req.imageUrl!, '_blank')}
                     />
                   </div>
                 )}

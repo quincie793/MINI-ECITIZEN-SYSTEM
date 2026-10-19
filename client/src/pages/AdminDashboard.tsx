@@ -50,7 +50,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // --- bonus feature: Search and Filter ---
+  // --- Search and Filter ---
   const filteredRequests = requests.filter((req) => {
     const searchLower = searchTerm.toLowerCase();
     return (

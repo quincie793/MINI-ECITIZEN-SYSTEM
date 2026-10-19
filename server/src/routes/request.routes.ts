@@ -1,42 +1,37 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import prisma from '../lib/prisma';
 import { protect, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// --- MULTER CONFIGURATION (For Image Upload) ---
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    // Create a unique filename: timestamp-originalName
-    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '-')}`);
-  },
+// --- CLOUDINARY CONFIGURATION ---
+cloudinary.config({
+  // Add 'as string' to satisfy TypeScript's strict mode
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
+  api_key: process.env.CLOUDINARY_API_KEY as string,
+  api_secret: process.env.CLOUDINARY_API_SECRET as string,
 });
 
-const upload = multer({
+// --- MULTER CONFIGURATION (For Cloudinary Upload) ---
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'mini_ecitizen', 
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  } as any, // The 'as any' here prevents type errors with multer-storage-cloudinary
+});
+
+const upload = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|webp/;
-    const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = filetypes.test(file.mimetype);
-    if (extname && mimetype) {
-      return cb(null, true);
-    }
-    cb(new Error('Only images are allowed'));
-  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
 // --- ROUTES ---
 
 // 1. Submit a new request (Citizen)
-// "protect" ensures they are logged in. "upload.single('image')" handles the file.
 router.post(
   '/',
   protect,
@@ -45,8 +40,8 @@ router.post(
     try {
       const { category, location, description } = req.body;
 
-      // If a file was uploaded, get its path. Otherwise, null.
-      const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      // Cloudinary returns the full secure URL in req.file.path
+      const imageUrl = req.file ? req.file.path : null;
 
       const newRequest = await prisma.serviceRequest.create({
         data: {
