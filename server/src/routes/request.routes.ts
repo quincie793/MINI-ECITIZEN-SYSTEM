@@ -1,5 +1,7 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import prisma from '../lib/prisma';
@@ -19,19 +21,34 @@ if (cloudName && cloudApiKey && cloudApiSecret) {
   });
 } else {
   console.warn(
-    'Cloudinary configuration is incomplete. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file.'
+    'Cloudinary configuration is incomplete. Falling back to local uploads in /uploads.'
   );
 }
 
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
+const localUploadsDir = path.resolve(process.cwd(), 'uploads');
+fs.mkdirSync(localUploadsDir, { recursive: true });
+
+const cloudStorage = new CloudinaryStorage({
+  cloudinary,
   params: {
     folder: 'mini_ecitizen',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
   } as any,
 });
 
-const upload = multer({ storage });
+const localStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, localUploadsDir);
+  },
+  filename: (_req, file, cb) => {
+    const safeName = file.originalname.replace(/\s+/g, '-');
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+
+const upload = multer({
+  storage: cloudName && cloudApiKey && cloudApiSecret ? cloudStorage : localStorage,
+});
 
 // 1. GET MY REQUESTS (Fixing the 404)
 router.get('/my-requests', protect, async (req: AuthRequest, res: Response) => {
@@ -59,7 +76,23 @@ router.post('/', protect, (req, res, next) => {
 }, async (req: AuthRequest, res: Response) => {
   try {
     const { category, location, description } = req.body;
-    const imageUrl = req.file ? req.file.path : null;
+
+    let imageUrl: string | null = null;
+
+    if (req.file) {
+      if (typeof req.file.path === 'string' && req.file.path.startsWith('http')) {
+        imageUrl = req.file.path;
+      } else if (typeof req.file.filename === 'string') {
+        imageUrl = `/uploads/${req.file.filename}`;
+      } else if (typeof req.file.path === 'string') {
+        const normalizedPath = req.file.path.replace(/\\/g, '/');
+        const fileName = normalizedPath.includes('/uploads/')
+          ? normalizedPath.split('/uploads/').pop()
+          : path.basename(normalizedPath);
+
+        imageUrl = fileName ? `/uploads/${fileName}` : null;
+      }
+    }
 
     const newRequest = await prisma.serviceRequest.create({
       data: {
