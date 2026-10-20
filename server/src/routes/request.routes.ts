@@ -6,14 +6,12 @@ import { protect, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// Configure Cloudinary - Added 'as string' to fix the TypeScript error
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME as string,
   api_key: process.env.CLOUDINARY_API_KEY as string,
   api_secret: process.env.CLOUDINARY_API_SECRET as string,
 });
 
-// Use memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -36,25 +34,22 @@ router.post('/', protect, upload.single('image'), async (req: AuthRequest, res: 
     const { category, location, description } = req.body;
     let imageUrl = null;
 
-    // If an image was uploaded, send it to Cloudinary
     if (req.file) {
-      const uploadResult: any = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          { folder: 'mini_ecitizen' },
-          (error, result) => {
-            if (error) {
-              console.error("CLOUDINARY STREAM ERROR:", error);
-              reject(error);
-            } else {
-              resolve(result);
-            }
-          }
-        );
-        // Send the file buffer to Cloudinary
-        uploadStream.end(req.file!.buffer);
-      });
-      
-      imageUrl = uploadResult.secure_url;
+      try {
+        // Convert the memory buffer to a Base64 string
+        const b64 = Buffer.from(req.file.buffer).toString("base64");
+        const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+        
+        // Upload directly
+        const uploadResult = await cloudinary.uploader.upload(dataURI, {
+          folder: 'mini_ecitizen',
+        });
+        
+        imageUrl = uploadResult.secure_url;
+      } catch (cloudinaryError) {
+        console.error("CLOUDINARY ERROR:", cloudinaryError);
+        return res.status(500).json({ message: 'Cloudinary upload failed' });
+      }
     }
 
     const newRequest = await prisma.serviceRequest.create({
@@ -70,7 +65,7 @@ router.post('/', protect, upload.single('image'), async (req: AuthRequest, res: 
     res.status(201).json({ success: true, request: newRequest });
   } catch (error) {
     console.error("SUBMIT REQUEST ERROR:", error);
-    res.status(500).json({ message: 'Failed to submit request', error });
+    res.status(500).json({ message: 'Failed to submit request' });
   }
 });
 
