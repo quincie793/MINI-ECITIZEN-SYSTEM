@@ -1,32 +1,39 @@
-Mini eCitizen application
+Mini eCitizen - Public Service Request System
 A full-stack, role-based web application designed to streamline public service requests. Citizens can report issues (such as broken streetlights, water leaks, or uncollected garbage), and administrators have a dedicated dashboard to track, manage, and resolve these cases.
 
-Tech Stack:
+Live Demo:
+Frontend (Vercel): https://mini-ecitizen-system-yec2.vercel.app
+
+Backend API (Render): https://mini-ecitizen-system.onrender.com
+
+(Note: The backend is hosted on Render's free tier. If it has been inactive, the first request may take 30-50 seconds to wake up the server. Please be patient!)
+
+Tech Stack
 Frontend: React, Vite, TypeScript, Tailwind CSS, React Router, Axios
 
 Backend: Node.js, Express, TypeScript
 
-Database: SQL Server
+Database: PostgreSQL (Hosted on Neon)
 
 ORM: Prisma
 
-Security: JWT (JSON Web Tokens), Bcrypt (password hashing)
+File Storage: Cloudinary (for secure, cloud-based image uploads)
 
-File Uploads: Multer
+Authentication: JWT (JSON Web Tokens), Bcrypt (password hashing)
+
+Deployment: Vercel (Client), Render (Server)
 
 Core Features:
-Authentication & Authorization: Secure login and registration. Role-Based Access Control (RBAC) ensures citizens and admins only see their respective dashboards.
+Authentication & Authorization: Secure registration and login. Role-Based Access Control (RBAC) ensures citizens and admins only access their respective dashboards.
 
 Citizen Portal:
-
 Submit a new service request (Category, Location, Description).
 
-Optional image upload for evidence.
+Optional image upload for evidence (powered by Cloudinary).
 
-Track the status of personal requests (Pending, In Progress, Resolved).
+Track the real-time status of personal requests (Pending, In Progress, Resolved).
 
 Admin Dashboard:
-
 Real-time analytics overview (Total, Pending, In Progress, Resolved).
 
 View all requests submitted by all users.
@@ -35,19 +42,24 @@ Search and filter requests by user name, category, or location.
 
 Update request statuses instantly from the dashboard.
 
-Click on submitted images to view them in full size.
+View submitted images in full resolution.
+
+Technical Challenges & Solutions:
+Ephemeral File Systems in the Cloud: When deploying to Render, I realized that local file storage (uploads/ folder) is wiped clean every time the server restarts. Solution: I integrated Cloudinary using Multer's memory storage to ensure images are securely and permanently hosted in the cloud.
+
+Database Migration: Initially developed using local Microsoft SQL Server (SSMS). To deploy for free in the cloud, I migrated to PostgreSQL using Prisma's schema provider abstraction, requiring minimal code changes and no rewrite of the Express controllers.
+
+CORS Management: Configured dynamic CORS policies on the Express backend to securely allow both local development (localhost:5173) and dynamic Vercel preview deployment URLs.
 
 Local Setup Instructions:
-Follow these steps to run the project locally.
-
 Prerequisites
 Node.js installed
 
-SQL Server running locally
+A PostgreSQL Database URL (e.g., from Neon.tech)
+
+Cloudinary Account credentials
 
 1. Backend Setup (Server)
-Open a terminal and navigate to the server directory:
-
 bash
 cd server
 npm install
@@ -55,19 +67,20 @@ Create a .env file in the root of the server folder and add your environment var
 
 env
 PORT=5000
-DATABASE_URL="sqlserver://localhost:1433;database=mini_ecitizen;user=your_db_user;password=your_db_password;encrypt=true;trustServerCertificate=true"
-JWT_SECRET="your_super_secret_jwt_key_here"
-Run Prisma migrations to set up your database tables, then generate the Prisma client:
+DATABASE_URL="postgresql://your_neon_connection_string"
+JWT_SECRET="your_super_secret_jwt_key"
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
+Run Prisma to sync your database schema and generate the client:
 
 bash
-npx prisma migrate dev --name init
+npx prisma db push
 npx prisma generate
 Start the backend server:
 
 bash
 npm run dev
-(The server should now be running on http://localhost:5000)
-
 2. Frontend Setup (Client)
 Open a new terminal window and navigate to the client directory:
 
@@ -78,35 +91,43 @@ Start the frontend Vite development server:
 
 bash
 npm run dev
-(The app will be accessible at http://localhost:5173)
 
 Test Credentials:
-If you have populated your database with test users, you can use the following credentials to explore the system:
+To test the application, you can register a new account on the live site.
 
+To test the Admin features:
+
+Register a new account on the live site.
+
+Open Prisma Studio locally (npx prisma studio in the server folder connected to the live DB).
+
+Go to the User table, find your email, and change the role from CITIZEN to ADMIN.
+
+Log out and log back into the live site to receive a new Admin JWT token.
+
+OR use:
 Admin Account:
 
 Email: irene@test.com
 
-Password: 123456
+Password: irene@test.com
 
 Citizen Account:
 
-Email: zenalfa@gmail.com
+Email: mercy@gmail.com
 
-Password: 123456
+Password: mercy@gmail.com
 
 Project Structure:
 /client - React frontend application (Vite + Tailwind)
 
-/server - Express backend API (Prisma + SQL Server)
+/server - Express backend API (Prisma + PostgreSQL)
 
-/prisma - Database schema and migrations
+/prisma - Database schema
 
 /src/routes - Express API routes (Auth, Requests, Admin)
 
 /src/middleware - JWT and Role-Based verification
-
-/uploads - Local storage for uploaded images
 
 
 
