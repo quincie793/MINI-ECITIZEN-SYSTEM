@@ -180,7 +180,7 @@ const AdminDashboard = () => {
                           <a
                             href={req.imageUrl}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                           >
                             <img
                               src={req.imageUrl}

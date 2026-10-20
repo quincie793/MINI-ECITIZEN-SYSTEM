@@ -78,20 +78,26 @@ const CitizenDashboard = () => {
                   </div>
                 </div>
 
-                {/* Image Rendering - Uses the direct Cloudinary URL now */}
+                {/* Image Rendering - Wrapped in an <a> tag to prevent page zoom */}
                 {req.imageUrl && (
                   <div className="h-24 w-full flex-shrink-0 overflow-hidden rounded bg-gray-100 md:w-32">
-                    <img
-                      src={req.imageUrl}
-                      alt="Request Evidence"
-                      className="h-full w-full cursor-pointer object-cover transition-transform hover:scale-110"
-                      onClick={() => window.open(req.imageUrl!, '_blank')}
-                      onError={(e) => {
-                        // Fallback if image fails to load
-                        (e.target as HTMLImageElement).src =
-                          'https://via.placeholder.com/150?text=Image+Not+Found';
-                      }}
-                    />
+                    <a 
+                      href={req.imageUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block h-full w-full"
+                    >
+                      <img
+                        src={req.imageUrl}
+                        alt="Request Evidence"
+                        className="h-full w-full object-cover transition-transform hover:scale-110"
+                        onError={(e) => {
+                          // Fallback if image fails to load
+                          (e.target as HTMLImageElement).src =
+                            'https://via.placeholder.com/150?text=Image+Not+Found';
+                        }}
+                      />
+                    </a>
                   </div>
                 )}
               </div>
