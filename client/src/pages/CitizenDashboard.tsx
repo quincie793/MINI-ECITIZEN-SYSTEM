@@ -12,6 +12,7 @@ const CitizenDashboard = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
+        // This matches the backend route exactly
         const response = await api.get('/requests/my-requests');
         setRequests(response.data);
       } catch (error) {
@@ -77,13 +78,19 @@ const CitizenDashboard = () => {
                   </div>
                 </div>
 
+                {/* Image Rendering - Uses the direct Cloudinary URL now */}
                 {req.imageUrl && (
                   <div className="h-24 w-full flex-shrink-0 overflow-hidden rounded bg-gray-100 md:w-32">
                     <img
                       src={req.imageUrl}
-                      alt="Request"
+                      alt="Request Evidence"
                       className="h-full w-full cursor-pointer object-cover transition-transform hover:scale-110"
                       onClick={() => window.open(req.imageUrl!, '_blank')}
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        (e.target as HTMLImageElement).src =
+                          'https://via.placeholder.com/150?text=Image+Not+Found';
+                      }}
                     />
                   </div>
                 )}

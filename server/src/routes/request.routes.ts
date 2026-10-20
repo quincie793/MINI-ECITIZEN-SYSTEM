@@ -7,14 +7,22 @@ import { protect, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
-// 1. Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
-  api_key: process.env.CLOUDINARY_API_KEY!,
-  api_secret: process.env.CLOUDINARY_API_SECRET!,
-});
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const cloudApiKey = process.env.CLOUDINARY_API_KEY;
+const cloudApiSecret = process.env.CLOUDINARY_API_SECRET;
 
-// 2. Set up Cloudinary Storage
+if (cloudName && cloudApiKey && cloudApiSecret) {
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: cloudApiKey,
+    api_secret: cloudApiSecret,
+  });
+} else {
+  console.warn(
+    'Cloudinary configuration is incomplete. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file.'
+  );
+}
+
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -25,12 +33,32 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// 3. POST route with better error logging
-router.post('/', protect, upload.single('image'), async (req: AuthRequest, res: Response) => {
+// 1. GET MY REQUESTS (Fixing the 404)
+router.get('/my-requests', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const requests = await prisma.serviceRequest.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch requests' });
+  }
+});
+
+// 2. POST NEW REQUEST (Fixing the 500)
+router.post('/', protect, (req, res, next) => {
+  // Wrap multer to catch Cloudinary upload errors
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error("IMAGE UPLOAD ERROR:", err); // THIS WILL SHOW IN RENDER LOGS
+      return res.status(500).json({ message: 'Image upload failed', error: err.message });
+    }
+    next();
+  });
+}, async (req: AuthRequest, res: Response) => {
   try {
     const { category, location, description } = req.body;
-    
-    // req.file.path contains the full Cloudinary URL
     const imageUrl = req.file ? req.file.path : null;
 
     const newRequest = await prisma.serviceRequest.create({
@@ -45,7 +73,7 @@ router.post('/', protect, upload.single('image'), async (req: AuthRequest, res: 
 
     res.status(201).json({ success: true, request: newRequest });
   } catch (error) {
-    console.error("SUBMIT REQUEST ERROR:", error); // <-- This will show in Render logs
+    console.error("SUBMIT REQUEST DB ERROR:", error);
     res.status(500).json({ message: 'Failed to submit request' });
   }
 });
