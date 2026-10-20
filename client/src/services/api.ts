@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // Hardcoded Render URL for production
-  baseURL: 'https://mini-ecitizen-system.onrender.com/api', 
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    'https://mini-ecitizen-system.onrender.com/api',
 });
 
 api.interceptors.request.use((config) => {

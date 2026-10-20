@@ -54,6 +54,7 @@
 // export default app;
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 
 // Import your routes
@@ -90,6 +91,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const uploadsDir = path.resolve(process.cwd(), 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Serve uploaded images statically
 app.use('/uploads', express.static(uploadsDir));
